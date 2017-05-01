@@ -48,7 +48,10 @@ func main() {
 		switch *cmdShowType {
 		case "package":
 			fmt.Println("Search for files on server...")
-			downloader.ArtDownloader.AQLSearch([]string{""}, []string{""}, []string{*cmdShowName})
+			for _, item := range downloader.ArtDownloader.AQLSearch([]string{}, []string{}, []string{*cmdShowName}) {
+				fmt.Println(item)
+			}
+
 		}
 	}
 

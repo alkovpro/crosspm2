@@ -175,11 +175,6 @@ func (dl *ArtifactoryDownloader) AQLSearch(aRepo []string, aPath []string, aName
 					item)
 			}
 		}
-		for _, repo := range dl.cpmConfig.Config.Common.Repo {
-			repos += fmt.Sprintf(`
-			  {"repo":{"$eq":"%s"}},`,
-				repo)
-		}
 	}
 	if len(repos) > 0 {
 		repos = repos[:len(repos)-1]
