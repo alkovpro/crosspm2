@@ -87,26 +87,29 @@ func (dl *CrossPMDownloader) FindDependencies(depsFile string) {
 		for _, src := range dl.cpmConfig.Config.Sources {
 			for _, repo := range src.Repo {
 				jobs_prepare++
-				go func(parser string, values map[string]string, server string, repo string) {  // , i int, ii int, iii int) {
+				go func(parser string, values map[string]string, server string, repo string) { // , i int, ii int, iii int) {
 					pathParams <- dl.cpmParser.FillPath(parser, values, server, repo)
 					//fmt.Println(i, ii, iii)
-				}(src.Parser, r, src.Server, repo)  // , i, ii, iii)
+				}(src.Parser, r, src.Server, repo) // , i, ii, iii)
 			}
 		}
 	}
-	pathList := make(chan []string)
+	fmt.Println("Search for files on server...")
+	pathList := make(chan parse.PathsParam)
 	jobs_search := 0
 	for i := 0; i < jobs_prepare; i++ {
 		repos := make([]string, 0)
 		paths := make([]string, 0)
 		names := make([]string, 0)
+		params := make(map[string]string)
 		for _, pp := range <-pathParams {
+			params = pp.Params
 			if !hasItem(&repos, pp.Params["repo"]) {
 				repos = append(repos, pp.Params["repo"])
 			}
 			tmp, err := url.Parse(pp.Path)
 			if err == nil {
-				tmpPath := strings.Split(strings.Trim(tmp.Path,"/"), "/")
+				tmpPath := strings.Split(strings.Trim(tmp.Path, "/"), "/")
 				if len(tmpPath) >= 3 {
 					repo_path := ""
 					if len(tmpPath) > 3 {
@@ -126,17 +129,25 @@ func (dl *CrossPMDownloader) FindDependencies(depsFile string) {
 		if (len(repos) > 0) && (len(paths) > 0) && (len(names) > 0) {
 			jobs_search++
 			go func(aRepo []string, aPath []string, aName []string) {
-				pathList <- dl.ArtDownloader.AQLSearch(aRepo, aPath, aName)
+				pathList <- parse.PathsParam{
+					Paths:  dl.ArtDownloader.AQLSearch(aRepo, aPath, aName),
+					Params: params,
+				}
 			}(repos, paths, names)
 		}
 
 	}
 	close(pathParams)
 
-	fmt.Println("Search for files on server...")
 	for i := 0; i < jobs_search; i++ {
-		for _, item := range <-pathList {
-			fmt.Println(i, item)
+		item := <-pathList
+		fmt.Println("\nParams(", i, "):")
+		for item_name, item_value := range item.Params {
+			fmt.Println("\t", item_name, "=",item_value)
+		}
+		fmt.Println("Paths(", i, "):")
+		for _, item_path := range item.Paths {
+			fmt.Println("\t", item_path)
 		}
 	}
 	close(pathList)

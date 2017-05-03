@@ -20,6 +20,10 @@ type PathParam struct {
 	Path   string
 	Params map[string]string
 }
+type PathsParam struct {
+	Paths   []string
+	Params  map[string]string
+}
 
 type PathParams struct {
 	Params []PathParam
